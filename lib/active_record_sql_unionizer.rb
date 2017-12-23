@@ -1,1 +1,1 @@
-require_relative "../lib/active_record_sql_unionizer/active_record_sql_unionizer"
+require_relative "active_record_sql_unionizer/active_record_sql_unionizer"
