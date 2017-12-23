@@ -1,8 +1,8 @@
-#Purpose
+# Purpose
 Give an extension for your active record classes that allows union queries. The queries can be active record relations
  or SQL strings so that you have some flexibility around how you write your queries. 
  
-#How use
+# How use
 Include in your project
 
 ```apple js
@@ -28,7 +28,7 @@ result = Dummy.unionize(sql_string, active_record_relation)
 
 The `unionize` method takes any amount of ActiveRecord::Relation or valid SQL strings. 
 
-#If you fork
+# If you fork
 
 ### Setup Test Database
 Currently just tested with postgres. Source 'TEST_DB' as the test database you want to use or create the test db in irb;
