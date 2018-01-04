@@ -27,11 +27,14 @@ RSpec.configure do |config|
   ActiveRecord::Base.establish_connection(adapter: "postgresql", database: ENV["TEST_DB"] || "unionizer_test")
 
   ActiveRecord::Base.connection.data_sources
-  unless ActiveRecord::Base.connection.data_source_exists?("dummies")
-    ActiveRecord::Migration.class_eval do
-      create_table :dummies do |t|
-        t.string :name
-      end
+  ActiveRecord::Migration.class_eval do
+    drop_table :dummies
+  end
+
+  ActiveRecord::Migration.class_eval do
+    create_table :dummies do |t|
+      t.string :name
+      t.string :type
     end
   end
 end
