@@ -35,6 +35,9 @@ module ActiveRecordSqlUnionizer
     end
   end
 
+
+  private
+  
   class UnionizerHelper
     #for 'private' methods/ readability
 
