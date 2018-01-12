@@ -21,8 +21,10 @@ module ActiveRecordSqlUnionizer
                 query
               when Symbol
                 unionizer_helper.handle_symbol_arg(self, query)
-              else
+              when ActiveRecord::Relation
                 query.to_sql
+              else
+                raise(UnionizerError.new(type: :unknown_arg_type))
             end
 
         "(#{query_string})"
@@ -37,7 +39,7 @@ module ActiveRecordSqlUnionizer
 
 
   private
-  
+
   class UnionizerHelper
     #for 'private' methods/ readability
 
@@ -55,11 +57,11 @@ module ActiveRecordSqlUnionizer
     # @param [Symbol] arg
     #
     # @return [String, UnionizerError]
-    def handle_symbol_arg(klass, arg)
-      if klass.respond_to?(arg)
-        klass.send(arg).to_sql
+    def handle_symbol_arg(klass, method_name)
+      if klass.respond_to?(method_name)
+        klass.send(method_name).to_sql
       else
-        raise(UnionizerError.new(klass.to_s, arg))
+        raise(UnionizerError.new(type: :bad_method, class: klass.to_s, method_name: method_name))
       end
     end
 
@@ -77,8 +79,12 @@ module ActiveRecordSqlUnionizer
     # @param [Symbol] method_name
     #
     # @return [UnionizerError]
-    def initialize(klass_name, method_name)
-      msg = "ActiveRecordSqlUnionizer expected #{klass_name} to respond to #{method_name}, but it does not"
+    def initialize(options)
+      if options[:type] == :unknown_arg_type
+        msg = "ActiveRecordSqlUnionizer received an arguement that was not a SQL string, ActiveRecord::Relation, or scoping method name"
+      elsif options[:type] == :bad_method
+        msg = "ActiveRecordSqlUnionizer expected #{options[:class]} to respond to #{options[:method_name]}, but it does not"
+      end
       super(msg)
     end
   end

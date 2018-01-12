@@ -65,7 +65,13 @@ describe "ActiveRecordSqlUnionizer" do
 
 
     expect {Dummy.unionize(sql_string, :not_defined_class_method)}.to raise_error(
-        "ActiveRecordSqlUnionizer expected Dummy to respond to not_defined_class_method, but it does not"
+      "ActiveRecordSqlUnionizer expected Dummy to respond to not_defined_class_method, but it does not"
+    )
+  end
+
+  it "raises when arg is not String, Symbol, or ActiveRecord::Relation" do
+    expect {Dummy.unionize(2)}.to raise_error(
+      "ActiveRecordSqlUnionizer received an arguement that was not a SQL string, ActiveRecord::Relation, or scoping method name"
     )
   end
 end
