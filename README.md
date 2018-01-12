@@ -28,6 +28,9 @@ end
 
 You are then free to call
 ```apple js
+sql_string = "SELECT * from dummies where some='thing'"
+active_record_relation = Dummy.where(some: "other thing")
+
 result = Dummy.unionize(sql_string, active_record_relation, :some_scoping_method)
 ``` 
 
