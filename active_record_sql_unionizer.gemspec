@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = "active_record_sql_unionizer"
-  s.version     = "0.0.1"
+  s.version     = "0.0.2"
   s.date        = "2017-12-22"
   s.summary     = "Union for ActiveRecord::Relation and SQL string queries"
   s.description = "Union for ActiveRecord::Relation and SQL string queries. Fam."
