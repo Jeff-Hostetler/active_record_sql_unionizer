@@ -1,6 +1,7 @@
 # Purpose
-Give an extension for your active record classes that allows union queries. The queries can be active record relations
- or SQL strings so that you have some flexibility around how you write your queries. 
+Give an extension for your active record classes that allows union queries. 
+The queries can be active record relations, scoping method names, or 
+SQL strings so that you have some flexibility around how you write your queries. 
  
 # How use
 Include in your project
@@ -18,12 +19,16 @@ Bring ActiveRecordSqlUnionizer into your active record class.
 ```apple js
 class Dummy < ActiveRecord::Base
   include ActiveRecordSqlUnionizer
+  
+  def self.some_scoping_method
+    where(some: "stuff")
+  end
 end
 ```
 
 You are then free to call
 ```apple js
-result = Dummy.unionize(sql_string, active_record_relation)
+result = Dummy.unionize(sql_string, active_record_relation, :some_scoping_method)
 ``` 
 
 The `unionize` method takes any amount of ActiveRecord::Relation or valid SQL strings. 

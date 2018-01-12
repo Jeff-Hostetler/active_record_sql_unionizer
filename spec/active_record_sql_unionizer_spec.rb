@@ -38,6 +38,34 @@ describe "ActiveRecordSqlUnionizer" do
 
     expect(result).to be_kind_of(ActiveRecord::Relation)
     expect(result).to match_array([dummy_1, dummy_2])
+  end
 
+  it "can take a class method as an argument" do
+    dummy_1 = Dummy.create!
+    dummy_2 = Dummy.create!(name: "second")
+    Dummy.create!(name: "not me")
+    Dummy.singleton_class.class_eval do
+      define_method(:some_scoping_method) do
+        where(id: dummy_1.id)
+      end
+    end
+    sql_string = "SELECT * FROM dummies WHERE name='second'"
+
+
+    result = Dummy.unionize(sql_string, :some_scoping_method)
+
+
+    expect(result).to be_kind_of(ActiveRecord::Relation)
+    expect(result).to match_array([dummy_1, dummy_2])
+  end
+
+  it "raises when symbol passed in is not a class method" do
+    Dummy.create!(name: "second")
+    sql_string = "SELECT * FROM dummies WHERE name='second'"
+
+
+    expect {Dummy.unionize(sql_string, :not_defined_class_method)}.to raise_error(
+        "ActiveRecordSqlUnionizer expected Dummy to respond to not_defined_class_method, but it does not"
+    )
   end
 end
