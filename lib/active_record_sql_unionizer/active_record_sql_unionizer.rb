@@ -75,8 +75,7 @@ module ActiveRecordSqlUnionizer
   end
 
   class UnionizerError < StandardError
-    # @param [String] klass_name
-    # @param [Symbol] method_name
+    # @param [Hash] options
     #
     # @return [UnionizerError]
     def initialize(options)
