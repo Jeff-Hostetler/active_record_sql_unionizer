@@ -2,38 +2,23 @@ require "active_record"
 
 module ActiveRecordSqlUnionizer
   extend ActiveSupport::Concern
-
   module ClassMethods
-    #passed in objects can be valid SQL strings, ActiveRecord::Relation, and class methods
-    #as symbols that return an ActiveRecord::Relation.
+    # passed in objects can be valid SQL strings, ActiveRecord::Relation,
+    # and class methods as symbols that return an ActiveRecord::Relation or SQL strings.
+    #
     # @param [Splat] queries
     #
     # @return [ActiveRecord::Relation]
     def unionize(*queries)
       unionizer_helper = UnionizerHelper.new
 
-      table_name = unionizer_helper.get_table_name(self)
-
-      sql_queries = queries.map do |query|
-        query_string =
-            case query
-              when String
-                query
-              when Symbol
-                unionizer_helper.handle_symbol_arg(self, query)
-              when ActiveRecord::Relation
-                query.to_sql
-              else
-                raise(UnionizerError.new(type: :unknown_arg_type))
-            end
-
-        "(#{query_string})"
+      sql_strings = queries.map do |query|
+        "(#{unionizer_helper.query_to_sql_string(self, query, :unknown_arg_type)})"
       end
 
-      union_string = unionizer_helper.construct_final_query_string(sql_queries, table_name)
-
-      sql = self.connection.unprepared_statement {union_string}
-      self.from(sql)
+      table_name = unionizer_helper.get_table_name(self)
+      final_query = self.connection.unprepared_statement { "(#{sql_strings.join(" UNION ")}) AS #{table_name}" }
+      self.from(final_query)
     end
   end
 
@@ -41,7 +26,7 @@ module ActiveRecordSqlUnionizer
   private
 
   class UnionizerHelper
-    #for 'private' methods/ readability
+    # for 'private' methods/ readability
 
     # @param [Object] klass
     #
@@ -54,23 +39,32 @@ module ActiveRecordSqlUnionizer
       table_klass.to_s.underscore.downcase.pluralize
     end
 
-    # @param [Symbol] arg
+    # @param [Object] klass
+    # @param [Symbol] method_name
     #
     # @return [String, UnionizerError]
     def handle_symbol_arg(klass, method_name)
       if klass.respond_to?(method_name)
-        klass.send(method_name).to_sql
+        query_to_sql_string(klass, klass.send(method_name), :bad_method, method_name)
       else
-        raise(UnionizerError.new(type: :bad_method, class: klass.to_s, method_name: method_name))
+        raise(UnionizerError.new(type: :undefined_method, class_name: klass.to_s, method_name: method_name))
       end
     end
 
-    # @param [Array<String>] queries
-    # @param [String] table_name
+    # @param [ActiveRecord::Relation, String, Symbol] query
     #
-    # @return [String]
-    def construct_final_query_string(queries, table_name)
-      "(#{queries.join(" UNION ")}) AS #{table_name}"
+    # @return [String, UnionizerError]
+    def query_to_sql_string(klass, query, error_type, override_method_name=nil)
+      case query
+        when String
+          query
+        when Symbol
+          self.handle_symbol_arg(klass, query)
+        when ActiveRecord::Relation
+          query.to_sql
+        else
+          raise(UnionizerError.new(type: error_type, class_name: klass.to_s, method_name: (override_method_name || query)))
+      end
     end
   end
 
@@ -79,11 +73,20 @@ module ActiveRecordSqlUnionizer
     #
     # @return [UnionizerError]
     def initialize(options)
-      if options[:type] == :unknown_arg_type
-        msg = "ActiveRecordSqlUnionizer received an arguement that was not a SQL string, ActiveRecord::Relation, or scoping method name"
-      elsif options[:type] == :bad_method
-        msg = "ActiveRecordSqlUnionizer expected #{options[:class]} to respond to #{options[:method_name]}, but it does not"
-      end
+      error_type = options[:type]
+      class_name = options[:class_name]
+      method_name = options[:method_name]
+
+      msg =
+        case error_type
+          when :unknown_arg_type
+            "ActiveRecordSqlUnionizer received an arguement that was not a SQL string, ActiveRecord::Relation, or scoping method name"
+          when :undefined_method
+            "ActiveRecordSqlUnionizer expected #{class_name} to respond to #{method_name}, but it does not"
+          when :bad_method
+            "ActiveRecordSqlUnionizer expected #{class_name}.#{method_name} to return an ActiveRecord::Relation or SQL string, but it does not"
+        end
+
       super(msg)
     end
   end
