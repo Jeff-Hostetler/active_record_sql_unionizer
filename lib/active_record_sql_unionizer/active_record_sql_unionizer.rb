@@ -36,7 +36,8 @@ module ActiveRecordSqlUnionizer
       while table_klass.superclass != ActiveRecord::Base
         table_klass = table_klass.superclass
       end
-      table_klass.to_s.underscore.downcase.pluralize
+      # return the db table name. When the class is in a module, the split is necessary
+      table_klass.to_s.underscore.downcase.pluralize.split("/").last
     end
 
     # @param [Object] klass

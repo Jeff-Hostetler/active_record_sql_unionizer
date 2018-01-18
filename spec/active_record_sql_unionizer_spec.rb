@@ -40,6 +40,27 @@ describe "ActiveRecordSqlUnionizer" do
     expect(result).to match_array([dummy_1, dummy_2])
   end
 
+  it "works with classes in module" do
+    module SomeModule
+      class Dummy < ActiveRecord::Base
+        include ActiveRecordSqlUnionizer
+      end
+    end
+
+    dummy_1 = SomeModule::Dummy.create!
+    dummy_2 = SomeModule::Dummy.create!(name: "second")
+    SomeModule::Dummy.create!(name: "not me")
+    sql_string = "SELECT * FROM dummies WHERE name='second'"
+    active_record_relation = SomeModule::Dummy.where(id: dummy_1.id)
+
+
+    result = SomeModule::Dummy.unionize(sql_string, active_record_relation)
+
+
+    expect(result).to be_kind_of(ActiveRecord::Relation)
+    expect(result).to match_array([dummy_1, dummy_2])
+  end
+
   it "can take a class method as an argument that returns relation or SQL string" do
     dummy_1 = Dummy.create!
     dummy_2 = Dummy.create!(name: "second")
